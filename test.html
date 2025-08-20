@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Mini‑Textanalyse (DE) – Offline POS + Dialekt (Live)</title>
+<style>
+  :root{--bg:#0b0e14;--fg:#e6eaf2;--muted:#9aa4b2;--card:#121826;--border:#273247;--accent:#7bd3ff;--good:#4ade80;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35)}
+  [data-theme="light"]{--bg:#f6f9fc;--fg:#101827;--muted:#62718a;--card:#fff;--border:#e3e8f0;--accent:#0ea5e9;--good:#16a34a;--bad:#dc2626;--shadow:0 8px 24px rgba(2,6,23,.08)}
+  *{box-sizing:border-box}html,body{height:100%}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Noto Sans;background:var(--bg);color:var(--fg)}
+  .container{max-width:1100px;margin:0 auto;padding:20px}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .title{font-weight:800;font-size:22px}
+  .subtitle{color:var(--muted);font-size:14px}
+  .toggle{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;cursor:pointer}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
+  .card-b{padding:12px}
+  textarea{width:100%;min-height:44vh;resize:vertical;border:0;outline:none;background:transparent;color:var(--fg);padding:14px;font-size:16px;line-height:1.6}
+  .grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
+  @media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
+  .stat .l{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
+  .stat .v{font-size:22px;font-weight:800;margin-top:2px}
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+  .chip{border:1px solid var(--border);border-radius:999px;padding:6px 10px}
+  .note{font-size:12px;color:var(--muted)}
+  button{border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--fg);padding:8px 12px;font-weight:600;cursor:pointer}
+  .btn-primary{background:var(--accent);border-color:var(--accent);color:#001b2a}
+</style>
+</head>
+<body data-theme="dark">
+  <div class="container">
+    <header>
+      <div>
+        <div class="title">📊 Mini‑Textanalyse (DE)</div>
+        <div class="subtitle">Komplett offline: POS (Nomen/Verben/Adjektive/Artikel) + Dialekt‑Normalisierung, Live‑Zähler & robuste Anglizismen</div>
+      </div>
+      <label class="toggle" id="themeToggle"><input id="themeCheck" type="checkbox" style="display:none"/>🌙/🌞 <span id="themeLabel">Dark</span></label>
+    </header>
+
+    <section class="card">
+      <div class="card-h"><div class="subtitle">Text & (optional) Modell laden</div></div>
+      <div class="card-b">
+        <textarea id="editor" spellcheck="false" placeholder="Tippe hier… z. B.: hasch / bisch / machste / haste / sag / sagsch"></textarea>
+        <div class="bar">
+          <button id="btnClear">Leeren</button>
+          <input type="file" id="fileModel" accept=".json,.csv"/>
+          <span class="note" id="modelNote">Heuristik aktiv – lade CSV/JSON für präzisere POS‑Tags</span>
+          <label class="chip"><input type="checkbox" id="toggleAng"> Anglizismen auflisten</label>
+        </div>
+      </div>
+    </section>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="stat"><div class="l">Zeichen (ohne Leerzeichen)</div><div class="v" id="stCharsNo">0</div></div>
+      <div class="stat"><div class="l">Zeichen (gesamt)</div><div class="v" id="stChars">0</div></div>
+      <div class="stat"><div class="l">Wörter</div><div class="v" id="stWords">0</div></div>
+      <div class="stat"><div class="l">Sätze</div><div class="v" id="stSents">0</div></div>
+      <div class="stat"><div class="l">Vokale</div><div class="v" id="stVowels">0</div></div>
+      <div class="stat"><div class="l">Konsonanten</div><div class="v" id="stCons">0</div></div>
+      <div class="stat"><div class="l">Artikel</div><div class="v" id="stArticles">0</div></div>
+      <div class="stat"><div class="l">Nomen</div><div class="v" id="stNouns">0</div></div>
+      <div class="stat"><div class="l">Verben</div><div class="v" id="stVerbs">0</div></div>
+      <div class="stat"><div class="l">Adjektive</div><div class="v" id="stAdjs">0</div></div>
+      <div class="stat"><div class="l">Anglizismen</div><div class="v" id="stAng">0</div></div>
+      <div class="stat"><div class="l">Unbekannte</div><div class="v" id="stOther">0</div></div>
+    </div>
+
+    <section class="card" style="margin-top:12px">
+      <div class="card-h"><div class="subtitle">(Optional) Anglizismen‑Liste</div></div>
+      <div class="card-b"><div id="listAng" class="list"></div></div>
+    </section>
+  </div>
+
+<script>
+(function(){
+  // Theme
+  const root=document.body, chk=document.getElementById('themeCheck'), lbl=document.getElementById('themeLabel');
+  const saved=localStorage.getItem('mta-theme');
+  const prefersLight=window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+  const initial=saved || (prefersLight?'light':'dark');
+  root.setAttribute('data-theme',initial); lbl.textContent=initial==='dark'?'Dark':'Light'; chk.checked=initial==='dark';
+  document.getElementById('themeToggle').addEventListener('click',()=>{const nowDark=!chk.checked;chk.checked=nowDark;const mode=nowDark?'dark':'light';root.setAttribute('data-theme',mode);lbl.textContent=nowDark?'Dark':'Light';localStorage.setItem('mta-theme',mode);});
+
+  // Tokenizer & helpers (offline)
+  const LETTER="A-Za-zÄÖÜäöüßÀ-ÖØ-öø-ÿĀ-ž";
+  const WORD_RE=new RegExp("["+LETTER+"0-9.,!?;:()\"'„”“]+","g");
+  const VOWELS_RE=/[aeiouäöüAEIOUÄÖÜ]/g;
+  const LETTER_ONLY_RE=/[A-Za-zÄÖÜäöüß]/g;
+  const PUNCT_RE=/^[\.,!?;:\(\)\"'„”“]+$/;
+  function isPunct(t){ return PUNCT_RE.test(t); }
+  const hasSeg=typeof Intl!=='undefined' && Intl.Segmenter;
+  function words(text){
+    const w=[];
+    if(hasSeg){ const seg=new Intl.Segmenter('de',{granularity:'word'}); for(const s of seg.segment(text)){ const t=s.segment.trim(); if(t){ w.push(t); } } return w; }
+    return (text.match(WORD_RE)||[]);
+  }
+  function sentences(text){
+    if(hasSeg){ const seg=new Intl.Segmenter('de',{granularity:'sentence'}); return Array.from(seg.segment(text)).map(s=>s.segment).filter(Boolean); }
+    return (text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[]);
+  }
+
+  // Dialekt-/Umgangssprache → Normalisierung
+  function normalizeDialect(text){
+    const rules=[
+      [/\bhaste\b/gi,'hast du'],[/\bmachste\b/gi,'machst du'],[/\bkannste\b/gi,'kannst du'],[/\bwillste\b/gi,'willst du'],[/\bbiste\b/gi,'bist du'],[/\bwärste\b/gi,'wärst du'],
+      [/\bhasch\b/gi,'hast'],[/\bhosch\b/gi,'hast'],[/\bbisch\b/gi,'bist'],[/\bsagsch\b/gi,'sagst du'],
+      [/\bisch\b/gi,'ist'],[/\bgell\b/gi,''],[/\bnet\b/gi,'nicht']
+    ];
+    let out=text; for(const [re,rep] of rules){ out=out.replace(re,rep); } return out;
+  }
+
+  // --- Anglizismen-Listen ---
+  const DE_WHITELIST = new Set([
+    // Funktionswörter / häufige deutsche Wörter, niemals Anglizismus
+    'und','oder','aber','denn','dass','weil','wenn','doch','halt','eben','mal','ja','nein','nicht','kein','später','früher','heute','gestern','morgen','ihr','euch','wir','ich','du','er','sie','es','am','im','beim','zum','zur','vom','vom','mit','ohne','für','gegen','über','unter','zwischen','vor','nach','bis','seit','aus','bei','von','wieder','weiter','wetter','zeit','jahr','tag','uhr','minute','sekunde'
+  ]);
+
+  const ANG_BLACKLIST = new Set([
+    // Beispiele aus deinem Text + häufige Anglizismen
+    'safe','bro','chillen','gechillt','lost','cringe','call','meeting','update','feature','job','match','work-life-balance','surfen','feed','posten','twittern','homeoffice','marketing','start-up','action','talkshow','teaser','app','laptop','download','paper','bachelor','thesis','song','score','hit','slogan','label','aftershave','fake','fake news','deadline','feedback','performance','setup','commit','push','pull','merge','release','sprint','story','task','design','mockup','briefing','review','like','follow','cancel','submit','login','logout','account','support','challenge','focus','remote','brainstorm','roadmap','beta','alpha','stable','track','trend','content','store','shop','landing','campaign','brief','copy','creator','community','reach','engagement','insight','tracking'
+  ]);
+
+  // Mini-Lexika & Heuristiken (UD-ähnliche Tags)
+  const ARTICLES=new Set(['der','die','das','den','dem','des','ein','eine','einen','einem','eines','kein','keine','keinen','keinem','keines']);
+  function isArticle(w){ return ARTICLES.has(w); }
+  function isVerb(w){ if(/^(ge)?[a-zäöüß]+(en|ern|eln)$/i.test(w)) return true; if(/^[a-zäöüß]+(e|st|t|en|te|test|ten|tet)$/i.test(w)) return true; return false; }
+  function isAdj(w){ if(/^[a-zäöüß]+(ig|lich|isch|end|bar|sam)$/i.test(w)) return true; return false; }
+  function isNoun(w){ return /^[A-ZÄÖÜ][a-zäöüß]+/.test(w); }
+
+  // Optional lokales Modell (CSV/JSON): Wort→Tag (DE-Wortliste/UD)
+  let model=null; // {dict:Map}
+  function setModelDict(obj){ const mp=new Map(); for(const k of Object.keys(obj)){ mp.set(k,obj[k]); } model={dict:mp}; document.getElementById('modelNote').textContent='Modell aktiv ('+mp.size+' Einträge)'; }
+  function setModelCSV(text){ const mp=new Map(); const lines=text.split(/\r?\n/); for(const line of lines){ const m=line.split(','); if(m.length>=2){ const w=m[0].trim(); const t=m[1].trim(); if(w&&t) mp.set(w,t); } } model={dict:mp}; document.getElementById('modelNote').textContent='Modell aktiv ('+mp.size+' Einträge)'; }
+
+  function inModelDe(w){ if(!model) return false; const v=model.dict.get(w)||model.dict.get(w.toLowerCase()); if(!v) return false; // treat any known non-X tag as German
+    const tag=(v+"").toUpperCase(); return tag!=='X' && tag!=='ENG' && tag!=='EN' && tag!=='FOREIGN'; }
+
+  // Robuste Anglizismus-Erkennung
+  function isAnglicism(word){
+    const w=word.toLowerCase();
+    if(DE_WHITELIST.has(w)) return false;               // explizit deutsch
+    if(inModelDe(w)) return false;                     // im deutschen Modell vorhanden
+    if(ANG_BLACKLIST.has(w)) return true;              // bekannte Anglizismen
+
+    // Pattern – mit deutschen Ausnahmen
+    // 1) typische Endungen, aber NICHT deutsche Muster wie "-ter" in später/Wetter usw.
+    if(/(ing|ed|er|y)$/i.test(w)){
+      if(/(äter|etter|nter|mmer|cher|pher|auer|iker|ikerin|ikerinnen)$/.test(w)) return false; // deutsche -er/-ter-Endungen
+      if(/später|wetter|vater|mutter|töchter|mädchen/.test(w)) return false;
+      return true;
+    }
+    // 2) th/sh/ck als engl. Marker – aber viele dt. Wörter haben ck; daher nur wenn KEIN Umlaut & kein deutsches Muster
+    if(/th|sh/.test(w)) return true;
+    if(/ck/.test(w) && !/[äöüß]/.test(w) && !/(rück|druck|stück|blick|glück|ecke|jacke)/.test(w)) return true;
+    // 3) CamelCase/Brand-Style
+    if(/[A-Za-z]+[A-Z][a-z]+/.test(word)) return true;
+    // 4) q ohne u
+    if(/q(?!u)/i.test(w)) return true;
+
+    return false;
+  }
+
+  function tagWord(w){
+    const lw=w.toLowerCase();
+    if(/^[.,!?;:()\"'„”“]$/.test(w)) return 'PUNCT';
+    if(model){ const t=model.dict.get(w)||model.dict.get(lw); if(t) return (t+"").toUpperCase(); }
+    if(isArticle(lw)) return 'DET';
+    if(isVerb(w)) return 'VERB';
+    if(isAdj(w)) return 'ADJ';
+    if(isNoun(w)) return 'NOUN';
+    return 'X';
+  }
+
+  function analyze(text){
+    const chars=text.length; const charsNo=(text.match(/\S/g)||[]).length; const ws=words(text); const wordsOnly=ws.filter(t=>!isPunct(t)); const sents=sentences(text);
+    const vowels=(text.match(VOWELS_RE)||[]).length; const letters=(text.match(LETTER_ONLY_RE)||[]).length; const cons=Math.max(0,letters-vowels);
+
+    // POS auf normalisiertem Text
+    const norm=normalizeDialect(wordsOnly.join(' ')); const toks=words(norm);
+
+    let cArticles=0,cNouns=0,cVerbs=0,cAdjs=0,cAng=0,cOther=0; const angList=[];
+    for(let i=0;i<toks.length;i++){
+      const tok=toks[i];
+      const tag=tagWord(tok);
+      if(tag==='DET') cArticles++; else if(tag==='NOUN') cNouns++; else if(tag==='VERB') cVerbs++; else if(tag==='ADJ') cAdjs++; else if(tag==='PUNCT') {/* ignore */} else if(!/^[0-9]+$/.test(tok)) cOther++;
+      // Anglizismen auf Originalwortbasis prüfen (nicht normalisiert)
+      const orig=ws[i]||tok; if(isAnglicism(orig)) { cAng++; angList.push(orig); }
+    }
+
+    return {chars,charsNo,words:wordsOnly.length,sents:sents.length,vowels,cons,cArticles,cNouns,cVerbs,cAdjs,cAng,cOther,angList};
+  }
+
+  // UI bindings
+  const ed=document.getElementById('editor');
+  const [stCharsNo,stChars,stWords,stSents,stVowels,stCons,stArticles,stNouns,stVerbs,stAdjs,stAng,stOther]=['stCharsNo','stChars','stWords','stSents','stVowels','stCons','stArticles','stNouns','stVerbs','stAdjs','stAng','stOther'].map(id=>document.getElementById(id));
+  const listAng=document.getElementById('listAng');
+
+  function render(){
+    const r=analyze(ed.value||'');
+    stChars.textContent=r.chars; stCharsNo.textContent=r.charsNo; stWords.textContent=r.words; stSents.textContent=r.sents;
+    stVowels.textContent=r.vowels; stCons.textContent=r.cons;
+    stArticles.textContent=r.cArticles; stNouns.textContent=r.cNouns; stVerbs.textContent=r.cVerbs; stAdjs.textContent=r.cAdjs; stAng.textContent=r.cAng; stOther.textContent=r.cOther;
+    listAng.innerHTML=''; if(document.getElementById('toggleAng').checked){ Array.from(new Set(r.angList.map(w=>w.toLowerCase()))).sort().forEach(w=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=w; listAng.appendChild(s); }); }
+  }
+
+  // Events
+  ed.addEventListener('input', render);
+  document.getElementById('btnClear').addEventListener('click',()=>{ ed.value=''; render(); });
+  document.getElementById('fileModel').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const txt=await f.text(); try{ const obj=JSON.parse(txt); setModelDict(obj);}catch(_){ setModelCSV(txt);} render(); });
+
+  // Demo
+  if(!ed.value){ ed.value='Hallo Welt. Was geht ab? Ihr seid flott. Safe oder nicht. Meeting & Call später.'; }
+  render();
+})();
+</script>
+</body>
+</html>
