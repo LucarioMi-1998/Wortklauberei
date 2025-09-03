@@ -236,6 +236,7 @@
     animateDice();
     saveState();
     renderDice();
+    renderScoreTable(); // <-- FIX: Buttons werden nach dem Wurf re-gerendert & entsperrt
     updateTopStats();
     previewScores();
     setStatus(state.rolls<3 ? "Wähle Würfel zum Halten oder würfle erneut." : "Wähle eine Kategorie aus und fixiere die Punkte.");
@@ -347,7 +348,6 @@
     // group previews
     const fixedClone = {...state.fixed};
     if(state.rolls>0){
-      // choose best hypothetical preview for sums: just display current dice sum projections
       const upperPreview = CATS.filter(c=>c.group==="upper" && fixedClone[c.key]===undefined)
         .reduce((s,c)=> s + scoreFor(c.key), 0) + calcSums(fixedClone).upper;
       const lowerPreview = CATS.filter(c=>c.group==="lower" && fixedClone[c.key]===undefined)
@@ -403,7 +403,6 @@
     const last = state.history.pop();
     if(!last) return;
     delete state.fixed[last.catKey];
-    // stay in current round (we rolled already?), allow user to re-score
     saveState();
     renderScoreTable();
     previewScores();
@@ -426,7 +425,6 @@
     try{
       const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
       if(!s) return null;
-      // minor migrations
       if(!s.history) s.history = [];
       return s;
     }catch(e){ return null; }
