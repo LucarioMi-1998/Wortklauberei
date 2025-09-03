@@ -1,219 +1,469 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Mini‑Textanalyse (DE) – Offline POS + Dialekt (Live)</title>
-<style>
-  :root{--bg:#0b0e14;--fg:#e6eaf2;--muted:#9aa4b2;--card:#121826;--border:#273247;--accent:#7bd3ff;--good:#4ade80;--bad:#ef4444;--shadow:0 10px 30px rgba(0,0,0,.35)}
-  [data-theme="light"]{--bg:#f6f9fc;--fg:#101827;--muted:#62718a;--card:#fff;--border:#e3e8f0;--accent:#0ea5e9;--good:#16a34a;--bad:#dc2626;--shadow:0 8px 24px rgba(2,6,23,.08)}
-  *{box-sizing:border-box}html,body{height:100%}body{margin:0;font:16px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,Noto Sans;background:var(--bg);color:var(--fg)}
-  .container{max-width:1100px;margin:0 auto;padding:20px}
-  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
-  .title{font-weight:800;font-size:22px}
-  .subtitle{color:var(--muted);font-size:14px}
-  .toggle{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border);padding:6px 10px;border-radius:999px;cursor:pointer}
-  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);overflow:hidden}
-  .card-h{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}
-  .card-b{padding:12px}
-  textarea{width:100%;min-height:44vh;resize:vertical;border:0;outline:none;background:transparent;color:var(--fg);padding:14px;font-size:16px;line-height:1.6}
-  .grid{display:grid;gap:10px;grid-template-columns:repeat(2,1fr)}
-  @media(min-width:900px){.grid{grid-template-columns:repeat(4,1fr)}}
-  .stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:12px}
-  .stat .l{font-size:11px;letter-spacing:.08em;color:var(--muted);text-transform:uppercase}
-  .stat .v{font-size:22px;font-weight:800;margin-top:2px}
-  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
-  .chip{border:1px solid var(--border);border-radius:999px;padding:6px 10px}
-  .note{font-size:12px;color:var(--muted)}
-  button{border-radius:12px;border:1px solid var(--border);background:transparent;color:var(--fg);padding:8px 12px;font-weight:600;cursor:pointer}
-  .btn-primary{background:var(--accent);border-color:var(--accent);color:#001b2a}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Yahtzee – Web App</title>
+  <style>
+    :root{
+      --bg:#0e0f12; --panel:#171a20; --panel-2:#1e232b; --muted:#8b95a7;
+      --text:#e9edf5; --accent:#7dd3fc; --accent-2:#a78bfa; --ok:#34d399; --warn:#f59e0b; --danger:#ef4444;
+      --radius:14px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 800px at 10% -10%, #18202b 0%, #0e0f12 50%), var(--bg);
+      color:var(--text);
+      display:flex; flex-direction:column; gap:20px; align-items:center; padding:24px;
+    }
+    header{max-width:1100px; width:100%; display:flex; gap:12px; align-items:center; justify-content:space-between}
+    .brand{display:flex; gap:12px; align-items:center}
+    .logo{width:36px; height:36px; border-radius:10px; background:
+      conic-gradient(from 210deg, var(--accent), var(--accent-2)); box-shadow:0 10px 30px rgba(127,173,255,.2)}
+    h1{font-size:20px; margin:0; letter-spacing:.3px}
+    .meta{font-size:12px; color:var(--muted)}
+    main{max-width:1100px; width:100%; display:grid; grid-template-columns: 1.2fr .9fr; gap:16px}
+    @media (max-width:980px){ main{grid-template-columns: 1fr; }}
+    .panel{background:linear-gradient(180deg,var(--panel),var(--panel-2));
+      border:1px solid #232935; border-radius:var(--radius); padding:16px; box-shadow:0 10px 40px rgba(0,0,0,.35)}
+    .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .controls{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:10px}
+    button{
+      border:1px solid #2a3240; background:#11141a; color:var(--text); padding:10px 14px;
+      border-radius:12px; font-weight:600; letter-spacing:.2px; cursor:pointer;
+      transition:.18s transform ease, .18s background ease, .18s border-color ease, .18s opacity ease;
+    }
+    button:hover{transform:translateY(-1px); border-color:#3b4558}
+    button:disabled{opacity:.5; cursor:not-allowed; transform:none}
+    .primary{background:linear-gradient(180deg,#0f1621,#0b1119); border-color:#2a3342}
+    .primary:not(:disabled):hover{background:linear-gradient(180deg,#101a2a,#0b121c)}
+    .accent{background:linear-gradient(180deg,#102333,#0f1724); border-color:#2b3d56}
+    .accent:not(:disabled):hover{background:linear-gradient(180deg,#102a3e,#0f1b2c)}
+    .dice-area{display:flex; gap:12px; flex-wrap:wrap; margin-top:6px}
+    .die{
+      width:72px; height:72px; border-radius:18px; background:radial-gradient(120% 100% at 30% 15%, #273245 0%, #151b25 60%);
+      border:1px solid #2a3242; display:grid; place-items:center; cursor:pointer; position:relative;
+      transition:.18s transform ease, .18s box-shadow ease, .18s border-color ease, .18s filter ease;
+      user-select:none;
+    }
+    .die.held{outline:2px solid var(--accent); border-color:#4b5e7a; box-shadow:0 0 0 6px rgba(125,211,252,.08) inset}
+    .pip{width:12px; height:12px; border-radius:50%; background:#e9edf5; opacity:.95; box-shadow:0 2px 8px rgba(0,0,0,.35)}
+    .die .value{position:absolute; bottom:6px; right:8px; font-size:11px; color:#a7b0c3; opacity:.85}
+    .shake{animation:shake .35s ease}
+    @keyframes shake{ 25%{transform:translate(2px,-2px) rotate(2deg)} 50%{transform:translate(-2px,2px) rotate(-2deg)} 75%{transform:translate(1px,-1px) rotate(1deg)} }
+    .stats{display:flex; gap:14px; align-items:center; flex-wrap:wrap; color:var(--muted); font-size:13px}
+    .badge{padding:6px 10px; border-radius:999px; border:1px solid #2a3240; background:#12161e}
+    .scores{width:100%; border-collapse:separate; border-spacing:0 8px}
+    .scores th{font-size:12px; color:var(--muted); text-align:left; padding:4px 8px}
+    .scores td{padding:8px}
+    .rowline{background:#131821; border:1px solid #222a38; border-radius:10px}
+    .rowline.used{opacity:.55}
+    .rowline:hover{border-color:#344155}
+    .cat{font-weight:600}
+    .choose-btn{float:right; font-size:12px}
+    .right{text-align:right}
+    .sumline{font-weight:700}
+    .footer{margin-top:6px; color:var(--muted); font-size:12px}
+    .pill{padding:6px 10px; border-radius:999px; border:1px solid #2b3444}
+    .note{color:#a7b0c3}
+    .link{color:var(--accent)}
+  </style>
 </head>
-<body data-theme="dark">
-  <div class="container">
-    <header>
+<body>
+  <header>
+    <div class="brand">
+      <div class="logo" aria-hidden="true"></div>
       <div>
-        <div class="title">📊 Mini‑Textanalyse (DE)</div>
-        <div class="subtitle">Komplett offline: POS (Nomen/Verben/Adjektive/Artikel) + Dialekt‑Normalisierung, Live‑Zähler & robuste Anglizismen</div>
+        <h1>Yahtzee (Kniffel) – Web App</h1>
+        <div class="meta">Einfaches Solo-Spiel · 13 Kategorien · bis zu 3 Würfe pro Runde</div>
       </div>
-      <label class="toggle" id="themeToggle"><input id="themeCheck" type="checkbox" style="display:none"/>🌙/🌞 <span id="themeLabel">Dark</span></label>
-    </header>
+    </div>
+    <div class="stats">
+      <span class="badge">Runde: <strong id="round">1</strong>/13</span>
+      <span class="badge">Würfe: <strong id="rolls">0</strong>/3</span>
+      <span class="badge">Gesamt: <strong id="total">0</strong></span>
+    </div>
+  </header>
 
-    <section class="card">
-      <div class="card-h"><div class="subtitle">Text & (optional) Modell laden</div></div>
-      <div class="card-b">
-        <textarea id="editor" spellcheck="false" placeholder="Tippe hier… z. B.: hasch / bisch / machste / haste / sag / sagsch"></textarea>
-        <div class="bar">
-          <button id="btnClear">Leeren</button>
-          <input type="file" id="fileModel" accept=".json,.csv"/>
-          <span class="note" id="modelNote">Heuristik aktiv – lade CSV/JSON für präzisere POS‑Tags</span>
-          <label class="chip"><input type="checkbox" id="toggleAng"> Anglizismen auflisten</label>
+  <main>
+    <!-- Linke Seite: Würfel -->
+    <section class="panel">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div style="font-weight:700; letter-spacing:.3px;">Würfel</div>
+          <div class="note" style="font-size:13px;">Klicke auf Würfel, um sie zu halten/zu lösen.</div>
+        </div>
+        <div class="row">
+          <button id="btn-new" class="accent">Neues Spiel</button>
+          <button id="btn-roll" class="primary">Würfeln</button>
+        </div>
+      </div>
+
+      <div id="dice" class="dice-area" aria-live="polite"></div>
+
+      <div class="controls">
+        <div class="note">Tipp: Du darfst pro Runde maximal <strong>dreimal</strong> würfeln.</div>
+        <div class="row">
+          <span class="pill">Gehalten: <strong id="heldCount">0</strong>/5</span>
         </div>
       </div>
     </section>
 
-    <div class="grid" style="margin-top:12px">
-      <div class="stat"><div class="l">Zeichen (ohne Leerzeichen)</div><div class="v" id="stCharsNo">0</div></div>
-      <div class="stat"><div class="l">Zeichen (gesamt)</div><div class="v" id="stChars">0</div></div>
-      <div class="stat"><div class="l">Wörter</div><div class="v" id="stWords">0</div></div>
-      <div class="stat"><div class="l">Sätze</div><div class="v" id="stSents">0</div></div>
-      <div class="stat"><div class="l">Vokale</div><div class="v" id="stVowels">0</div></div>
-      <div class="stat"><div class="l">Konsonanten</div><div class="v" id="stCons">0</div></div>
-      <div class="stat"><div class="l">Artikel</div><div class="v" id="stArticles">0</div></div>
-      <div class="stat"><div class="l">Nomen</div><div class="v" id="stNouns">0</div></div>
-      <div class="stat"><div class="l">Verben</div><div class="v" id="stVerbs">0</div></div>
-      <div class="stat"><div class="l">Adjektive</div><div class="v" id="stAdjs">0</div></div>
-      <div class="stat"><div class="l">Anglizismen</div><div class="v" id="stAng">0</div></div>
-      <div class="stat"><div class="l">Unbekannte</div><div class="v" id="stOther">0</div></div>
-    </div>
+    <!-- Rechte Seite: Scoreboard -->
+    <section class="panel">
+      <div class="row" style="justify-content:space-between; align-items:flex-end;">
+        <div>
+          <div style="font-weight:700; letter-spacing:.3px;">Punkte</div>
+          <div class="note" style="font-size:13px;">Wähle nach dem Würfeln eine Kategorie aus.</div>
+        </div>
+        <div class="row">
+          <button id="btn-undo" title="Letzte Kategorie rückgängig machen">Rückgängig</button>
+          <button id="btn-clear">Score zurücksetzen</button>
+        </div>
+      </div>
 
-    <section class="card" style="margin-top:12px">
-      <div class="card-h"><div class="subtitle">(Optional) Anglizismen‑Liste</div></div>
-      <div class="card-b"><div id="listAng" class="list"></div></div>
+      <table class="scores" id="scoreTable">
+        <thead>
+          <tr><th>Kategorie</th><th class="right">Vorschlag</th><th class="right">Fix</th></tr>
+        </thead>
+        <tbody id="scoreBody"></tbody>
+        <tfoot>
+          <tr class="rowline sumline"><td class="cat">Oberer Teil</td>
+              <td class="right" id="upperPreview">0</td><td class="right" id="upperSum">0</td></tr>
+          <tr class="rowline"><td>BONUS (≥63 im oberen Teil) +35</td>
+              <td class="right" id="bonusPreview">0</td><td class="right" id="bonus">0</td></tr>
+          <tr class="rowline sumline"><td class="cat">Unterer Teil</td>
+              <td class="right" id="lowerPreview">0</td><td class="right" id="lowerSum">0</td></tr>
+          <tr class="rowline sumline"><td class="cat">GESAMT</td>
+              <td class="right" id="totalPreview">0</td><td class="right" id="totalSum">0</td></tr>
+        </tfoot>
+      </table>
+      <div class="footer" id="status"></div>
     </section>
-  </div>
+  </main>
 
-<script>
-(function(){
-  // Theme
-  const root=document.body, chk=document.getElementById('themeCheck'), lbl=document.getElementById('themeLabel');
-  const saved=localStorage.getItem('mta-theme');
-  const prefersLight=window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
-  const initial=saved || (prefersLight?'light':'dark');
-  root.setAttribute('data-theme',initial); lbl.textContent=initial==='dark'?'Dark':'Light'; chk.checked=initial==='dark';
-  document.getElementById('themeToggle').addEventListener('click',()=>{const nowDark=!chk.checked;chk.checked=nowDark;const mode=nowDark?'dark':'light';root.setAttribute('data-theme',mode);lbl.textContent=nowDark?'Dark':'Light';localStorage.setItem('mta-theme',mode);});
+  <script>
+  // ---------- Utils ----------
+  const $ = sel => document.querySelector(sel);
+  const $$ = sel => Array.from(document.querySelectorAll(sel));
+  const clamp = (n,min,max)=>Math.max(min,Math.min(max,n));
+  const byId = id => document.getElementById(id);
 
-  // Tokenizer & helpers (offline)
-  const LETTER="A-Za-zÄÖÜäöüßÀ-ÖØ-öø-ÿĀ-ž";
-  const WORD_RE=new RegExp("["+LETTER+"0-9.,!?;:()\"'„”“]+","g");
-  const VOWELS_RE=/[aeiouäöüAEIOUÄÖÜ]/g;
-  const LETTER_ONLY_RE=/[A-Za-zÄÖÜäöüß]/g;
-  const PUNCT_RE=/^[\.,!?;:\(\)\"'„”“]+$/;
-  function isPunct(t){ return PUNCT_RE.test(t); }
-  const hasSeg=typeof Intl!=='undefined' && Intl.Segmenter;
-  function words(text){
-    const w=[];
-    if(hasSeg){ const seg=new Intl.Segmenter('de',{granularity:'word'}); for(const s of seg.segment(text)){ const t=s.segment.trim(); if(t){ w.push(t); } } return w; }
-    return (text.match(WORD_RE)||[]);
+  // ---------- Game State ----------
+  const CATS = [
+    // Upper
+    {key:"ones", label:"Einsen (1)", group:"upper"},
+    {key:"twos", label:"Zweien (2)", group:"upper"},
+    {key:"threes", label:"Dreien (3)", group:"upper"},
+    {key:"fours", label:"Vieren (4)", group:"upper"},
+    {key:"fives", label:"Fünfen (5)", group:"upper"},
+    {key:"sixes", label:"Sechsen (6)", group:"upper"},
+    // Lower
+    {key:"threeKind", label:"Dreierpasch", group:"lower"},
+    {key:"fourKind", label:"Viererpasch", group:"lower"},
+    {key:"fullHouse", label:"Full House (25)", group:"lower"},
+    {key:"smallStraight", label:"Kleine Straße (30)", group:"lower"},
+    {key:"largeStraight", label:"Große Straße (40)", group:"lower"},
+    {key:"yahtzee", label:"Yahtzee (50)", group:"lower"},
+    {key:"chance", label:"Chance", group:"lower"},
+  ];
+
+  const STORAGE_KEY = "yahtzee_state_v1";
+
+  const freshState = () => ({
+    dice: [1,1,1,1,1],
+    held: [false,false,false,false,false],
+    rolls: 0,
+    round: 1,
+    fixed: {},        // {catKey: score}
+    history: [],      // stack of {catKey, score, prev}
+  });
+
+  let state = loadState() || freshState();
+
+  // ---------- Dice Rendering ----------
+  function renderDice(){
+    const wrap = byId("dice");
+    wrap.innerHTML = "";
+    state.dice.forEach((v,i)=>{
+      const d = document.createElement("div");
+      d.className = "die" + (state.held[i] ? " held" : "");
+      d.setAttribute("role","button");
+      d.setAttribute("aria-pressed", state.held[i]);
+      d.title = state.held[i] ? "Klicken zum Lösen" : "Klicken zum Halten";
+      d.addEventListener("click", ()=>{
+        state.held[i] = !state.held[i];
+        saveState();
+        renderDice();
+        updateHeldCount();
+        previewScores();
+      });
+
+      // face
+      d.appendChild(renderFace(v));
+      const val = document.createElement("div"); val.className="value"; val.textContent=v;
+      d.appendChild(val);
+      wrap.appendChild(d);
+    });
+    updateHeldCount();
   }
-  function sentences(text){
-    if(hasSeg){ const seg=new Intl.Segmenter('de',{granularity:'sentence'}); return Array.from(seg.segment(text)).map(s=>s.segment).filter(Boolean); }
-    return (text.match(/[^.!?]+[.!?]+|[^.!?]+$/g)||[]);
-  }
 
-  // Dialekt-/Umgangssprache → Normalisierung
-  function normalizeDialect(text){
-    const rules=[
-      [/\bhaste\b/gi,'hast du'],[/\bmachste\b/gi,'machst du'],[/\bkannste\b/gi,'kannst du'],[/\bwillste\b/gi,'willst du'],[/\bbiste\b/gi,'bist du'],[/\bwärste\b/gi,'wärst du'],
-      [/\bhasch\b/gi,'hast'],[/\bhosch\b/gi,'hast'],[/\bbisch\b/gi,'bist'],[/\bsagsch\b/gi,'sagst du'],
-      [/\bisch\b/gi,'ist'],[/\bgell\b/gi,''],[/\bnet\b/gi,'nicht']
-    ];
-    let out=text; for(const [re,rep] of rules){ out=out.replace(re,rep); } return out;
-  }
-
-  // --- Anglizismen-Listen ---
-  const DE_WHITELIST = new Set([
-    // Funktionswörter / häufige deutsche Wörter, niemals Anglizismus
-    'und','oder','aber','denn','dass','weil','wenn','doch','halt','eben','mal','ja','nein','nicht','kein','später','früher','heute','gestern','morgen','ihr','euch','wir','ich','du','er','sie','es','am','im','beim','zum','zur','vom','vom','mit','ohne','für','gegen','über','unter','zwischen','vor','nach','bis','seit','aus','bei','von','wieder','weiter','wetter','zeit','jahr','tag','uhr','minute','sekunde'
-  ]);
-
-  const ANG_BLACKLIST = new Set([
-    // Beispiele aus deinem Text + häufige Anglizismen
-    'safe','bro','chillen','gechillt','lost','cringe','call','meeting','update','feature','job','match','work-life-balance','surfen','feed','posten','twittern','homeoffice','marketing','start-up','action','talkshow','teaser','app','laptop','download','paper','bachelor','thesis','song','score','hit','slogan','label','aftershave','fake','fake news','deadline','feedback','performance','setup','commit','push','pull','merge','release','sprint','story','task','design','mockup','briefing','review','like','follow','cancel','submit','login','logout','account','support','challenge','focus','remote','brainstorm','roadmap','beta','alpha','stable','track','trend','content','store','shop','landing','campaign','brief','copy','creator','community','reach','engagement','insight','tracking'
-  ]);
-
-  // Mini-Lexika & Heuristiken (UD-ähnliche Tags)
-  const ARTICLES=new Set(['der','die','das','den','dem','des','ein','eine','einen','einem','eines','kein','keine','keinen','keinem','keines']);
-  function isArticle(w){ return ARTICLES.has(w); }
-  function isVerb(w){ if(/^(ge)?[a-zäöüß]+(en|ern|eln)$/i.test(w)) return true; if(/^[a-zäöüß]+(e|st|t|en|te|test|ten|tet)$/i.test(w)) return true; return false; }
-  function isAdj(w){ if(/^[a-zäöüß]+(ig|lich|isch|end|bar|sam)$/i.test(w)) return true; return false; }
-  function isNoun(w){ return /^[A-ZÄÖÜ][a-zäöüß]+/.test(w); }
-
-  // Optional lokales Modell (CSV/JSON): Wort→Tag (DE-Wortliste/UD)
-  let model=null; // {dict:Map}
-  function setModelDict(obj){ const mp=new Map(); for(const k of Object.keys(obj)){ mp.set(k,obj[k]); } model={dict:mp}; document.getElementById('modelNote').textContent='Modell aktiv ('+mp.size+' Einträge)'; }
-  function setModelCSV(text){ const mp=new Map(); const lines=text.split(/\r?\n/); for(const line of lines){ const m=line.split(','); if(m.length>=2){ const w=m[0].trim(); const t=m[1].trim(); if(w&&t) mp.set(w,t); } } model={dict:mp}; document.getElementById('modelNote').textContent='Modell aktiv ('+mp.size+' Einträge)'; }
-
-  function inModelDe(w){ if(!model) return false; const v=model.dict.get(w)||model.dict.get(w.toLowerCase()); if(!v) return false; // treat any known non-X tag as German
-    const tag=(v+"").toUpperCase(); return tag!=='X' && tag!=='ENG' && tag!=='EN' && tag!=='FOREIGN'; }
-
-  // Robuste Anglizismus-Erkennung
-  function isAnglicism(word){
-    const w=word.toLowerCase();
-    if(DE_WHITELIST.has(w)) return false;               // explizit deutsch
-    if(inModelDe(w)) return false;                     // im deutschen Modell vorhanden
-    if(ANG_BLACKLIST.has(w)) return true;              // bekannte Anglizismen
-
-    // Pattern – mit deutschen Ausnahmen
-    // 1) typische Endungen, aber NICHT deutsche Muster wie "-ter" in später/Wetter usw.
-    if(/(ing|ed|er|y)$/i.test(w)){
-      if(/(äter|etter|nter|mmer|cher|pher|auer|iker|ikerin|ikerinnen)$/.test(w)) return false; // deutsche -er/-ter-Endungen
-      if(/später|wetter|vater|mutter|töchter|mädchen/.test(w)) return false;
-      return true;
+  function renderFace(value){
+    const face = document.createElement("div");
+    face.style = "display:grid; grid-template-columns: repeat(3, 1fr); gap:6px;";
+    const map = {
+      1:[5], 2:[1,9], 3:[1,5,9], 4:[1,3,7,9], 5:[1,3,5,7,9], 6:[1,3,4,6,7,9]
+    };
+    for(let i=1;i<=9;i++){
+      const dot = document.createElement("div");
+      if(map[value].includes(i)){dot.className="pip";}
+      face.appendChild(dot);
     }
-    // 2) th/sh/ck als engl. Marker – aber viele dt. Wörter haben ck; daher nur wenn KEIN Umlaut & kein deutsches Muster
-    if(/th|sh/.test(w)) return true;
-    if(/ck/.test(w) && !/[äöüß]/.test(w) && !/(rück|druck|stück|blick|glück|ecke|jacke)/.test(w)) return true;
-    // 3) CamelCase/Brand-Style
-    if(/[A-Za-z]+[A-Z][a-z]+/.test(word)) return true;
-    // 4) q ohne u
-    if(/q(?!u)/i.test(w)) return true;
-
-    return false;
+    return face;
   }
 
-  function tagWord(w){
-    const lw=w.toLowerCase();
-    if(/^[.,!?;:()\"'„”“]$/.test(w)) return 'PUNCT';
-    if(model){ const t=model.dict.get(w)||model.dict.get(lw); if(t) return (t+"").toUpperCase(); }
-    if(isArticle(lw)) return 'DET';
-    if(isVerb(w)) return 'VERB';
-    if(isAdj(w)) return 'ADJ';
-    if(isNoun(w)) return 'NOUN';
-    return 'X';
+  function updateHeldCount(){
+    byId("heldCount").textContent = state.held.filter(Boolean).length;
   }
 
-  function analyze(text){
-    const chars=text.length; const charsNo=(text.match(/\S/g)||[]).length; const ws=words(text); const wordsOnly=ws.filter(t=>!isPunct(t)); const sents=sentences(text);
-    const vowels=(text.match(VOWELS_RE)||[]).length; const letters=(text.match(LETTER_ONLY_RE)||[]).length; const cons=Math.max(0,letters-vowels);
+  // ---------- Rolling ----------
+  function roll(){
+    if(state.rolls >= 3) return;
+    state.dice = state.dice.map((v,i)=> state.held[i] ? v : (Math.floor(Math.random()*6)+1));
+    state.rolls++;
+    animateDice();
+    saveState();
+    renderDice();
+    updateTopStats();
+    previewScores();
+    setStatus(state.rolls<3 ? "Wähle Würfel zum Halten oder würfle erneut." : "Wähle eine Kategorie aus und fixiere die Punkte.");
+  }
 
-    // POS auf normalisiertem Text
-    const norm=normalizeDialect(wordsOnly.join(' ')); const toks=words(norm);
+  function animateDice(){
+    $$(".die").forEach(d=>{
+      d.classList.remove("shake");
+      void d.offsetWidth; // reflow
+      d.classList.add("shake");
+    });
+  }
 
-    let cArticles=0,cNouns=0,cVerbs=0,cAdjs=0,cAng=0,cOther=0; const angList=[];
-    for(let i=0;i<toks.length;i++){
-      const tok=toks[i];
-      const tag=tagWord(tok);
-      if(tag==='DET') cArticles++; else if(tag==='NOUN') cNouns++; else if(tag==='VERB') cVerbs++; else if(tag==='ADJ') cAdjs++; else if(tag==='PUNCT') {/* ignore */} else if(!/^[0-9]+$/.test(tok)) cOther++;
-      // Anglizismen auf Originalwortbasis prüfen (nicht normalisiert)
-      const orig=ws[i]||tok; if(isAnglicism(orig)) { cAng++; angList.push(orig); }
+  // ---------- Scoring ----------
+  function counts(){
+    const c = {1:0,2:0,3:0,4:0,5:0,6:0};
+    for(const v of state.dice) c[v]++;
+    return c;
+  }
+
+  function sumDice(arr = state.dice){
+    return arr.reduce((a,b)=>a+b,0);
+  }
+
+  function isNKind(n){ return Object.values(counts()).some(v=>v>=n); }
+  function isFullHouse(){ const vs = Object.values(counts()).sort((a,b)=>a-b); return vs[0]===0 && vs[1]===2 && vs[2]===3; }
+  function isSmallStraight(){
+    const set = new Set(state.dice);
+    const runs = [[1,2,3,4],[2,3,4,5],[3,4,5,6]];
+    return runs.some(run=> run.every(x=>set.has(x)));
+  }
+  function isLargeStraight(){
+    const set = new Set(state.dice);
+    return ([1,2,3,4,5].every(x=>set.has(x)) || [2,3,4,5,6].every(x=>set.has(x)));
+  }
+  function isYahtzee(){ return Object.values(counts()).some(v=>v===5); }
+
+  function scoreFor(cat){
+    const c = counts();
+    switch(cat){
+      case "ones": return c[1]*1;
+      case "twos": return c[2]*2;
+      case "threes": return c[3]*3;
+      case "fours": return c[4]*4;
+      case "fives": return c[5]*5;
+      case "sixes": return c[6]*6;
+      case "threeKind": return isNKind(3) ? sumDice() : 0;
+      case "fourKind":  return isNKind(4) ? sumDice() : 0;
+      case "fullHouse": return isFullHouse() ? 25 : 0;
+      case "smallStraight": return isSmallStraight() ? 30 : 0;
+      case "largeStraight": return isLargeStraight() ? 40 : 0;
+      case "yahtzee": return isYahtzee() ? 50 : 0;
+      case "chance": return sumDice();
+      default: return 0;
     }
-
-    return {chars,charsNo,words:wordsOnly.length,sents:sents.length,vowels,cons,cArticles,cNouns,cVerbs,cAdjs,cAng,cOther,angList};
   }
 
-  // UI bindings
-  const ed=document.getElementById('editor');
-  const [stCharsNo,stChars,stWords,stSents,stVowels,stCons,stArticles,stNouns,stVerbs,stAdjs,stAng,stOther]=['stCharsNo','stChars','stWords','stSents','stVowels','stCons','stArticles','stNouns','stVerbs','stAdjs','stAng','stOther'].map(id=>document.getElementById(id));
-  const listAng=document.getElementById('listAng');
-
-  function render(){
-    const r=analyze(ed.value||'');
-    stChars.textContent=r.chars; stCharsNo.textContent=r.charsNo; stWords.textContent=r.words; stSents.textContent=r.sents;
-    stVowels.textContent=r.vowels; stCons.textContent=r.cons;
-    stArticles.textContent=r.cArticles; stNouns.textContent=r.cNouns; stVerbs.textContent=r.cVerbs; stAdjs.textContent=r.cAdjs; stAng.textContent=r.cAng; stOther.textContent=r.cOther;
-    listAng.innerHTML=''; if(document.getElementById('toggleAng').checked){ Array.from(new Set(r.angList.map(w=>w.toLowerCase()))).sort().forEach(w=>{ const s=document.createElement('span'); s.className='chip'; s.textContent=w; listAng.appendChild(s); }); }
+  function calcSums(fixed = state.fixed){
+    let upper=0, lower=0;
+    for(const [k,v] of Object.entries(fixed)){
+      const def = CATS.find(c=>c.key===k);
+      if(!def) continue;
+      if(def.group==="upper") upper += v; else lower += v;
+    }
+    const bonus = upper >= 63 ? 35 : 0;
+    return {upper, lower, bonus, total: upper+bonus+lower};
   }
 
-  // Events
-  ed.addEventListener('input', render);
-  document.getElementById('btnClear').addEventListener('click',()=>{ ed.value=''; render(); });
-  document.getElementById('fileModel').addEventListener('change', async (e)=>{ const f=e.target.files&&e.target.files[0]; if(!f) return; const txt=await f.text(); try{ const obj=JSON.parse(txt); setModelDict(obj);}catch(_){ setModelCSV(txt);} render(); });
+  // ---------- Scoreboard Rendering ----------
+  function renderScoreTable(){
+    const body = byId("scoreBody");
+    body.innerHTML = "";
+    for(const cat of CATS){
+      const tr = document.createElement("tr");
+      tr.className = "rowline" + (state.fixed[cat.key] !== undefined ? " used" : "");
+      const tdCat = document.createElement("td");
+      tdCat.className = "cat";
+      tdCat.textContent = cat.label;
 
-  // Demo
-  if(!ed.value){ ed.value='Hallo Welt. Was geht ab? Ihr seid flott. Safe oder nicht. Meeting & Call später.'; }
-  render();
-})();
-</script>
+      const tdPrev = document.createElement("td");
+      tdPrev.className="right";
+      tdPrev.id = "prev_"+cat.key;
+      tdPrev.textContent = "-";
+
+      const tdFix = document.createElement("td");
+      tdFix.className="right";
+      const btn = document.createElement("button");
+      btn.className="choose-btn";
+      btn.textContent = state.fixed[cat.key] !== undefined ? "Fixiert" : "Eintragen";
+      btn.disabled = state.rolls===0 || state.fixed[cat.key] !== undefined;
+      btn.addEventListener("click", ()=> fixCategory(cat.key));
+      tdFix.appendChild(document.createTextNode(state.fixed[cat.key] ?? ""));
+      tdFix.appendChild(btn);
+
+      tr.appendChild(tdCat); tr.appendChild(tdPrev); tr.appendChild(tdFix);
+      body.appendChild(tr);
+    }
+    previewScores();
+    updateTotalsUI();
+  }
+
+  function previewScores(){
+    for(const cat of CATS){
+      const el = byId("prev_"+cat.key);
+      if(!el) continue;
+      if(state.fixed[cat.key] !== undefined){ el.textContent = state.fixed[cat.key]; continue; }
+      el.textContent = state.rolls>0 ? scoreFor(cat.key) : "-";
+    }
+    // group previews
+    const fixedClone = {...state.fixed};
+    if(state.rolls>0){
+      // choose best hypothetical preview for sums: just display current dice sum projections
+      const upperPreview = CATS.filter(c=>c.group==="upper" && fixedClone[c.key]===undefined)
+        .reduce((s,c)=> s + scoreFor(c.key), 0) + calcSums(fixedClone).upper;
+      const lowerPreview = CATS.filter(c=>c.group==="lower" && fixedClone[c.key]===undefined)
+        .reduce((s,c)=> s + scoreFor(c.key), 0) + calcSums(fixedClone).lower;
+      const bonusPreview = (upperPreview >= 63 ? 35 : (calcSums(fixedClone).upper>=63?35:0));
+      byId("upperPreview").textContent = upperPreview;
+      byId("lowerPreview").textContent = lowerPreview;
+      byId("bonusPreview").textContent = bonusPreview;
+      byId("totalPreview").textContent = upperPreview + lowerPreview + bonusPreview;
+    }else{
+      byId("upperPreview").textContent = "0";
+      byId("lowerPreview").textContent = "0";
+      byId("bonusPreview").textContent = "0";
+      byId("totalPreview").textContent = "0";
+    }
+  }
+
+  function updateTotalsUI(){
+    const sums = calcSums();
+    byId("upperSum").textContent = sums.upper;
+    byId("lowerSum").textContent = sums.lower;
+    byId("bonus").textContent = sums.bonus;
+    byId("totalSum").textContent = sums.total;
+    byId("total").textContent = sums.total;
+  }
+
+  function fixCategory(catKey){
+    const score = scoreFor(catKey);
+    state.fixed[catKey] = score;
+    state.history.push({catKey, score});
+    endRound();
+  }
+
+  function endRound(){
+    state.round = clamp(state.round+1, 1, 13);
+    state.rolls = 0;
+    state.held = [false,false,false,false,false];
+    saveState();
+    renderDice();
+    renderScoreTable();
+    updateTopStats();
+
+    if(Object.keys(state.fixed).length >= CATS.length){
+      const {total} = calcSums();
+      setStatus(`🎉 Spielende! Dein Gesamtscore: <strong>${total}</strong> Punkte.`);
+      byId("btn-roll").disabled = true;
+      return;
+    }
+    setStatus("Neue Runde! Würfle, um fortzufahren.");
+  }
+
+  function undo(){
+    const last = state.history.pop();
+    if(!last) return;
+    delete state.fixed[last.catKey];
+    // stay in current round (we rolled already?), allow user to re-score
+    saveState();
+    renderScoreTable();
+    previewScores();
+    setStatus("Letzte Fixierung rückgängig gemacht.");
+  }
+
+  // ---------- Status & Header ----------
+  function updateTopStats(){
+    byId("rolls").textContent = state.rolls;
+    byId("round").textContent = Math.min(Object.keys(state.fixed).length+1, 13);
+  }
+
+  function setStatus(html){
+    byId("status").innerHTML = html;
+  }
+
+  // ---------- Persistence ----------
+  function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function loadState(){
+    try{
+      const s = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      if(!s) return null;
+      // minor migrations
+      if(!s.history) s.history = [];
+      return s;
+    }catch(e){ return null; }
+  }
+  function clearScores(){
+    state.fixed = {};
+    state.history = [];
+    state.round = 1;
+    state.rolls = 0;
+    state.held = [false,false,false,false,false];
+    state.dice = [1,1,1,1,1];
+    saveState();
+    renderDice(); renderScoreTable(); updateTopStats();
+    setStatus("Punkte zurückgesetzt.");
+    byId("btn-roll").disabled = false;
+  }
+
+  // ---------- Init ----------
+  function init(){
+    renderDice();
+    renderScoreTable();
+    updateTopStats();
+    if(Object.keys(state.fixed).length >= CATS.length){
+      byId("btn-roll").disabled = true;
+      setStatus("Spiel beendet – starte ein neues Spiel.");
+    }else{
+      setStatus("Klicke auf „Würfeln“, um zu starten.");
+    }
+  }
+
+  // ---------- Events ----------
+  byId("btn-roll").addEventListener("click", roll);
+  byId("btn-new").addEventListener("click", ()=>{ state = freshState(); saveState(); init(); });
+  byId("btn-clear").addEventListener("click", clearScores);
+  byId("btn-undo").addEventListener("click", undo);
+
+  init();
+  </script>
 </body>
 </html>
